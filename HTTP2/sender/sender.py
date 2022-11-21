@@ -9,6 +9,7 @@ import ssl
 import httpx
 # Why use FastAPI app?
 app = FastAPI()
+flow=0
 # s = requests.session()
 async def send_packet(size):
     data = os.urandom(size)     
@@ -25,6 +26,27 @@ async def send_packet(size):
     client = httpx.AsyncClient(http2=True,verify=context)
     r = await client.post('https://127.0.0.1:8000/rec', data=bytes_out,headers={'Content-Type': 'application/octet-stream'})
 
+async def send_packet_single_connection(size,packets):
+    random_data = os.urandom(size)
+    
+
+    # s = requests.session()
+    # res = s.post('http://127.0.0.1:8000/rec', data=bytes_out, headers={'Content-Type': 'application/octet-stream'})
+
+    context = ssl.SSLContext()
+    # conn = http.client.HTTPSConnection("127.0.0.1",8000,context=context)
+    # conn.request("POST", "/rec",bytes_out,{'Content-Type': 'application/octet-stream'})
+    # response = conn.getresponse()
+    # print(response.read().decode())
+    global flow
+    client = httpx.AsyncClient(http2=True,verify=context)
+    for i in range(packets):
+        timestamp=time.time()
+        number=i
+        data=pickle.dumps([number,timestamp,random_data,flow])
+        r = await client.post('https://127.0.0.1:8000/rec', data=data,headers={'Content-Type': 'application/octet-stream'})
+    flow+=1
+
 @app.get("/ping")
 def ping():
     return {"status": "Success"}
@@ -37,8 +59,10 @@ async def receive_packets(request: Request):
     size=data['size']
     packets=data["packets"]
     start_time=time.time()
-    for i in range(packets):
-        await send_packet(size)
+    # for i in range(packets):
+    #     await send_packet(size)
+
+    await send_packet_single_connection(size,packets)
     end_time=time.time()
     return "Done with "+str(packets)+" packets of size "+str(size)+" in "+str(end_time-start_time)+" seconds."
 

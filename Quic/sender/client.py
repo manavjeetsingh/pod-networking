@@ -279,9 +279,9 @@ async def perform_http_request(
         "Response received for %s %s : %d bytes in %.1f s (%.3f Mbps)"
         % (method, urlparse(url).path, octets, elapsed, octets * 8 / elapsed / 1000000)
     )
-    print("Response received for %s %s : %d bytes in %.1f s (%.3f Mbps)"
-        % (method, urlparse(url).path, octets, elapsed, octets * 8 / elapsed / 1000000)
-    )
+    # print("Response received for %s %s : %d bytes in %.1f s (%.3f Mbps)"
+    #     % (method, urlparse(url).path, octets, elapsed, octets * 8 / elapsed / 1000000)
+    # )
 
     # output response
     if output_dir is not None:
@@ -346,10 +346,14 @@ def save_session_ticket(ticket: SessionTicket) -> None:
     is received.
     """
     logger.info("New session ticket received")
-    if False and args.session_ticket:
-        with open(args.session_ticket, "wb") as fp:
-            pickle.dump(ticket, fp)
-
+    # if args.session_ticket:
+    #     with open(args.session_ticket, "wb") as fp:
+    #         pickle.dump(ticket, fp)
+    #     logger.info("saved session ticket")
+    
+    with open("./session_ticket", "wb") as fp:
+        pickle.dump(ticket, fp)
+    logger.info("saved session ticket")
 
 async def main(
     configuration: QuicConfiguration,
@@ -437,6 +441,81 @@ async def main(
             process_http_pushes(client=client, include=include, output_dir=output_dir)
         client._quic.close(error_code=ErrorCode.H3_NO_ERROR)
 
+flow=0
+async def main_stripped(
+    configuration: QuicConfiguration,
+    urls: List[str],
+    data: Optional[str],
+    include: bool,
+    output_dir: Optional[str],
+    local_port: int,
+    zero_rtt: bool,
+    packets: int
+) -> None:
+ # parse URL
+    parsed = urlparse(urls[0])
+    assert parsed.scheme in (
+        "https",
+        "wss",
+    ), "Only https:// or wss:// URLs are supported."
+    host = parsed.hostname
+    if parsed.port is not None:
+        port = parsed.port
+    else:
+        port = 443
+
+# check validity of 2nd urls and later.
+    for i in range(1, len(urls)):
+
+        _p = urlparse(urls[i])
+
+        # fill in if empty
+        _scheme = _p.scheme or parsed.scheme
+        _host = _p.hostname or host
+        _port = _p.port or port
+
+        assert _scheme == parsed.scheme, "URL scheme doesn't match"
+        assert _host == host, "URL hostname doesn't match"
+        assert _port == port, "URL port doesn't match"
+
+        # reconstruct url with new hostname and port
+        _p = _p._replace(scheme=_scheme)
+        _p = _p._replace(netloc="{}:{}".format(_host, _port))
+        _p = urlparse(_p.geturl())
+        urls[i] = _p.geturl()
+
+    async with connect(
+        host,
+        port,
+        configuration=configuration,
+        create_protocol=HttpClient,
+        session_ticket_handler=save_session_ticket,
+        local_port=local_port,
+        wait_connected=not zero_rtt,
+    ) as client:
+
+        client = cast(HttpClient, client)
+
+        global flow
+        for i in range(packets):
+            #perform request    
+            new_data=[i,time.time(),data,flow]
+            coros = [
+                perform_http_request(
+                    client=client,
+                    url=url,
+                    data=new_data,
+                    include=include,
+                    output_dir=output_dir,
+                )
+                for url in urls
+            ]
+            await asyncio.gather(*coros)
+            #process http pushes
+            process_http_pushes(client=client, include=include, output_dir=output_dir)
+        flow+=1
+        client._quic.close(error_code=ErrorCode.H3_NO_ERROR)
+
 
 if __name__ == "__main__":
     defaults = QuicConfiguration(is_client=True)
@@ -500,6 +579,7 @@ if __name__ == "__main__":
         "-s",
         "--session-ticket",
         type=str,
+        default="./session_ticket",
         help="read and write session ticket from the specified file",
     )
     parser.add_argument(

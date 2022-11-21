@@ -5,7 +5,7 @@
 import datetime
 import os
 from urllib.parse import urlencode
-
+import logging
 import httpbin
 from asgiref.wsgi import WsgiToAsgi
 from starlette.applications import Starlette
@@ -15,7 +15,8 @@ from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocketDisconnect
-
+import pickle
+import time
 ROOT = os.path.dirname(__file__)
 STATIC_ROOT = os.environ.get("STATIC_ROOT", os.path.join(ROOT, "htdocs"))
 STATIC_URL = "/"
@@ -39,8 +40,39 @@ async def echo(request):
     """
     content = await request.body()
     media_type = request.headers.get("content-type")
-    return Response(content, media_type=media_type)
-
+    print(logging.info("Received data of size:"+str(len(content))))
+    return Response("a".encode(), media_type=media_type)
+first_time_sent=None
+last_time_sent=None
+first_time_got=None
+last_time_got=None
+flow=None
+delay=0
+async def res(request):
+    """
+    Response endpoint endpoint.
+    """
+    global first_time_got
+    global first_time_sent
+    global last_time_got
+    global last_time_sent
+    global flow
+    global delay
+    content = await request.body()
+    current_time=time.time()
+    data=pickle.loads(content)
+    packet_no=data[0]
+    if data[3]!=flow:
+        flow=data[3]
+        first_time_got=current_time
+        first_time_sent=data[1]
+        delay=0
+    last_time_got=current_time
+    last_time_sent=data[1]
+    delay+=last_time_got - last_time_sent
+    logging.info("Avg Delay in flow number "+  str(flow)+" Id: " + str(packet_no)+" is :" + str(delay/packet_no+1))
+    # logging.info("Received data of size:"+str(len(content)))
+    return Response(None)
 
 async def logs(request):
     """
@@ -134,6 +166,7 @@ starlette = Starlette(
         # Route("/", homepage),
         # Route("/{size:int}", padding),
         Route("/echo", echo, methods=["POST"]),
+        Route("/res", res, methods=["POST"]),
         # Mount("/httpbin", WsgiToAsgi(httpbin.app)),
         # Route("/logs", logs),
         # WebSocketRoute("/ws", ws),
