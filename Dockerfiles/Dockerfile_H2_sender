@@ -1,0 +1,26 @@
+FROM ubuntu:20.04
+
+ENV PYTHONUNBUFFERED=1
+
+EXPOSE 8001
+
+RUN apt-get update
+RUN apt-get install -y python3 python3-pip
+RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
+
+RUN mkdir -p /home/application
+WORKDIR /home/application
+
+COPY requirements.txt .
+RUN pip3 install --upgrade pip
+RUN set -ex
+RUN pip3 install -r requirements.txt
+
+RUN export LC_ALL=C.UTF-8
+RUN export LANG=C.UTF-8
+
+COPY HTTP2 .
+
+WORKDIR /home/application/HTTP2/sender
+
+CMD ["uvicorn", "sender:app", "--port", "8001"]
