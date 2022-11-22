@@ -27,6 +27,6 @@ RUN export LANG=C.UTF-8
 
 COPY . .
 
-WORKDIR /home/application/Quic/sender
+WORKDIR /home/application/Quic/receiver
 RUN ls
-CMD ["uvicorn", "sender:app", "--port", "5002", "--host", "0.0.0.0"]
+CMD ["python3", "server.py", "--certificate", "ssl_cert.pem", "--private-key", "ssl_key.pem"]

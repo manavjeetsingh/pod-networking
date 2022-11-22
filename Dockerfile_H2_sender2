@@ -2,7 +2,7 @@ FROM ubuntu:20.04
 
 ENV PYTHONUNBUFFERED=1
 
-EXPOSE 5001
+EXPOSE 6001
 
 RUN apt-get update
 RUN apt-get install -y python3 python3-pip
@@ -17,16 +17,12 @@ WORKDIR /home/application
 # RUN pip3 install --upgrade pip
 RUN set -ex
 RUN pip3 install -r requirements.txt
-RUN pip3 uninstall -y pyopenssl
-RUN pip3 install -U pyopenssl
-RUN pip3 install aioquic
-RUN pip3 install flask==2.1.3
-RUN pip3 install werkzeug==2.0.3
+# RUN pip install -U pyopenssl
 RUN export LC_ALL=C.UTF-8
 RUN export LANG=C.UTF-8
 
 COPY . .
 
-WORKDIR /home/application/Quic/sender
+WORKDIR /home/application/HTTP2/sender
 RUN ls
-CMD ["uvicorn", "sender:app", "--port", "5002", "--host", "0.0.0.0"]
+CMD ["uvicorn", "sender:app", "--port", "6001", "--host", "0.0.0.0"]
