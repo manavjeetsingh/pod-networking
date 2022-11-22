@@ -44,7 +44,7 @@ async def send_packet_single_connection(size,packets):
         timestamp=time.time()
         number=i
         data=pickle.dumps([number,timestamp,random_data,flow])
-        r = await client.post('https://127.0.0.1:8000/rec', data=data,headers={'Content-Type': 'application/octet-stream'})
+        r = await client.post('https://127.0.0.1:5000/rec', data=data,headers={'Content-Type': 'application/octet-stream'})
     flow+=1
 
 @app.get("/ping")

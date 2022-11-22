@@ -25,4 +25,4 @@ COPY . .
 
 WORKDIR /home/application/HTTP2/sender
 RUN ls
-CMD ["uvicorn", "sender:app", "--port", "8001", "--host", "0.0.0.0"]
+CMD ["uvicorn", "sender:app", "--port", "5001", "--host", "0.0.0.0"]

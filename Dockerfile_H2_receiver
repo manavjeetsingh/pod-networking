@@ -6,4 +6,25 @@ EXPOSE 8000
 
 RUN apt-get update
 RUN apt-get install -y python3 python3-pip
+RUN apt-get install -y git
+RUN apt-get install -y libssl-dev 
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
+
+
+RUN mkdir -p /home/application
+COPY requirements.txt /home/application
+WORKDIR /home/application
+
+# RUN pip3 install --upgrade pip
+RUN set -ex
+RUN pip3 install -r requirements.txt
+RUN pip uninstall -y pyopenssl
+RUN pip install -U pyopenssl
+RUN export LC_ALL=C.UTF-8
+RUN export LANG=C.UTF-8
+
+COPY . .
+
+WORKDIR /home/application/HTTP2/receiver
+RUN ls
+CMD ["daphne", "-e", "ssl:5000:privateKey=ssl_key.pem:certKey=ssl_cert.pem","-b", "0.0.0.0", "receiver:app", "-v", "1"]
