@@ -25,8 +25,8 @@ if __name__=='__main__':
     http1 = threading.Thread(target=http_send1, args=())
     http2 = threading.Thread(target=http_send2, args=())
 
-    http.start()
-    http.start()
+    http1.start()
+    http2.start()
 
-    http.join()
-    http.join()
+    http1.join()
+    http2.join()

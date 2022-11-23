@@ -70,7 +70,7 @@ async def res(request):
     last_time_got=current_time
     last_time_sent=data[1]
     delay+=last_time_got - last_time_sent
-    logging.info("Avg Delay in flow number "+  str(flow)+" Id: " + str(packet_no)+" is :" + str(delay/packet_no+1))
+    logging.info("Avg Delay in flow number "+  str(flow)+" Id: " + str(packet_no)+" is :" + str(delay/(packet_no+1)))
     # logging.info("Received data of size:"+str(len(content)))
     return Response(None)
 
