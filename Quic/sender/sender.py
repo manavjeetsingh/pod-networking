@@ -23,14 +23,14 @@ def ping():
     return {"status": "Success"}
 
 
-async def send_packet(size):
+async def send_packet(x,y):
     configuration= QuicConfiguration(
             is_client=True, alpn_protocols=H3_ALPN
         )
 
     configuration.load_verify_locations("pycacert.pem")
     urls=["https://localhost:4433/res"]
-    data = os.urandom(size) 
+    data=np.random.randint(1, 256, size=(3, x, y))
 
     # asyncio.run(
     await main_stripped(
@@ -45,14 +45,14 @@ async def send_packet(size):
     # )
 
 
-async def send_packet_single_connection(size,packets):
+async def send_packet_single_connection(x,y,packets):
     configuration= QuicConfiguration(
             is_client=True, alpn_protocols=H3_ALPN
         )
 
     configuration.load_verify_locations("pycacert.pem")
     urls=["https://130.245.127.102:5433/res"]
-    data = os.urandom(size) 
+    data=np.random.randint(1, 256, size=(3, x, y))
 
     # asyncio.run(
     await main_stripped(
@@ -75,11 +75,12 @@ async def send_packet_single_connection(size,packets):
 async def receive_packets(request: Request):
     data_in_bytes: bytes = await request.body()
     data=pickle.loads(data_in_bytes)
-    size=data['size']
+    x=data['x']
+    y=data['y']
     packets=data["packets"]
     start_time=time.time()
     # for i in range(packets):
         # await send_packet(size)
-    await send_packet_single_connection(size,packets)
+    await send_packet_single_connection(x,y,packets)
     end_time=time.time()
-    return "Done with "+str(packets)+" packets of size "+str(size)+" in "+str(end_time-start_time)+" seconds."
+    return "Done with "+str(packets)+" packets of size "+str(x)+"*"+str(y)+" in "+str(end_time-start_time)+" seconds."

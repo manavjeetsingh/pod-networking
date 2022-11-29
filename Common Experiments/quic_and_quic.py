@@ -7,7 +7,7 @@ s = requests.session()
 
 def quic_send1():
     configs={}
-    configs['packets']=1000
+    configs['packets']=100
     configs['x']=200
     configs['y']=200
     configs_out=pickle.dumps(configs)
@@ -16,7 +16,7 @@ def quic_send1():
 
 def quic_send2():
     configs={}
-    configs['packets']=1000
+    configs['packets']=100
     configs['x']=200
     configs['y']=200
     configs_out=pickle.dumps(configs)
